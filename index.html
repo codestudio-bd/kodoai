@@ -1,0 +1,813 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101114">
+<title>KodoAI</title>
+
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#101114;
+  --panel:#17181d;
+  --panel2:#202127;
+  --border:#303139;
+  --text:#f3f3f5;
+  --muted:#9698a4;
+  --blue:#6d8cff;
+  --blue2:#4568ed;
+  --danger:#ff7777;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  height:100dvh; overflow:hidden;
+}
+button,input,textarea { font:inherit; }
+button { cursor:pointer; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.app { display:flex; width:100%; height:100dvh; }
+.sidebar {
+  width:270px; flex-shrink:0; background:#141519;
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:15px; gap:14px;
+}
+.brand { display:flex; align-items:center; gap:10px; padding:5px 4px 13px; }
+.logo {
+  width:36px;height:36px;border-radius:12px;
+  background:linear-gradient(140deg,#7f9cff,#5266e8);
+  display:grid;place-items:center;font-weight:800;color:white;font-size:19px;
+}
+.brand-name { font-size:20px;font-weight:750;letter-spacing:-.6px; }
+.brand-sub { color:var(--muted);font-size:11px;margin-top:2px; }
+.primary,.secondary,.icon-btn,.mode-btn {
+  border:1px solid var(--border);border-radius:12px;
+  padding:11px 13px;color:var(--text);background:var(--panel2);
+}
+.primary { background:var(--blue2);border-color:transparent;color:white; }
+.new-chat { width:100%;text-align:left; }
+.sidebar-label { color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin:7px 4px 0; }
+.chat-list { overflow:auto;display:flex;flex-direction:column;gap:5px;flex:1; }
+.chat-row { display:flex;gap:4px;align-items:center;min-width:0; }
+.chat-select {
+  flex:1;min-width:0;text-align:left;border:0;background:transparent;
+  color:#d7d8df;border-radius:9px;padding:10px;font-size:13px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.chat-select.active,.chat-select:hover { background:var(--panel2); }
+.small-action { border:0;background:transparent;color:var(--muted);padding:7px;border-radius:8px; }
+.small-action:hover { background:var(--panel2);color:white; }
+.sidebar-foot { color:var(--muted);font-size:11px;line-height:1.6;padding:7px 3px; }
+.main { flex:1;min-width:0;display:flex;flex-direction:column; }
+.topbar {
+  height:62px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;border-bottom:1px solid var(--border);gap:10px;
+}
+.top-left,.top-right { display:flex;align-items:center;gap:9px; }
+.top-title { font-weight:650;font-size:15px; }
+.mode-switch { display:flex;gap:4px;padding:4px;border:1px solid var(--border);border-radius:12px;background:#15161a; }
+.mode-btn { border:0;background:transparent;padding:7px 12px;font-size:12px;color:var(--muted); }
+.mode-btn.active { background:#30323d;color:white; }
+.mobile-menu { display:none; }
+.scroll-area { flex:1;overflow-y:auto;overscroll-behavior:contain; }
+.content { width:min(850px,100%);margin:0 auto;padding:26px 22px 20px; }
+.welcome { min-height:45vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:22px 0; }
+.welcome-logo {
+  width:65px;height:65px;border-radius:22px;display:grid;place-items:center;
+  font-size:31px;font-weight:800;background:linear-gradient(140deg,#7e9aff,#465fe0);
+  box-shadow:0 10px 45px #4f69ff22;margin-bottom:20px;
+}
+.welcome h1 { font-size:clamp(27px,5vw,38px);letter-spacing:-1.4px;margin:0 0 12px; }
+.welcome p { color:var(--muted);font-size:14px;line-height:1.7;max-width:430px;margin:0; }
+.suggestions { display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:25px; }
+.suggestion { border:1px solid var(--border);background:var(--panel);color:#d6d7e0;border-radius:20px;padding:9px 13px;font-size:12px; }
+.messages { display:flex;flex-direction:column;gap:22px; }
+.message { display:flex;gap:11px;align-items:flex-start;min-width:0; }
+.avatar {
+  width:30px;height:30px;flex-shrink:0;border-radius:10px;display:grid;place-items:center;
+  font-size:12px;font-weight:750;background:#252731;color:#aebaff;
+}
+.message.user .avatar { background:#30323a;color:#eee; }
+.message-body { min-width:0;flex:1;padding-top:4px;line-height:1.65;font-size:14px;overflow-wrap:anywhere; }
+.message.user .message-body { background:#1c1d23;padding:11px 13px;border-radius:4px 13px 13px 13px; }
+.message-body pre { white-space:pre-wrap;overflow-wrap:anywhere;background:#0d0e11;padding:12px;border-radius:10px;overflow:auto; }
+.message-body img { max-width:100%;border-radius:12px; }
+.message-files { display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px; }
+.file-chip { border:1px solid var(--border);border-radius:9px;padding:6px 9px;color:#bfc1cc;font-size:11px; }
+.typing { color:var(--muted);font-size:13px; }
+.composer-wrap { padding:10px 18px max(14px,env(safe-area-inset-bottom));flex-shrink:0; }
+.composer { max-width:850px;margin:auto; }
+.pending { display:flex;gap:8px;overflow-x:auto;padding:0 0 9px; }
+.pending-item { position:relative;flex-shrink:0;width:78px;height:72px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--panel); }
+.pending-item img { width:100%;height:100%;object-fit:cover; }
+.pending-item .file-name { font-size:9px;position:absolute;bottom:0;left:0;right:0;padding:4px;background:#000b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.pending-item button { position:absolute;right:3px;top:3px;border:0;border-radius:50%;width:21px;height:21px;background:#000c;color:white; }
+.composer-box { border:1px solid #3a3b46;background:#191a20;border-radius:18px;padding:11px 12px 9px;box-shadow:0 8px 35px #0002; }
+#prompt { display:block;width:100%;min-height:43px;max-height:160px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:5px 4px;font-size:14px;line-height:1.6; }
+#prompt::placeholder { color:#858793; }
+.composer-tools { display:flex;align-items:center;gap:7px; }
+.tool-btn { border:1px solid var(--border);background:#22232a;color:#d7d8e0;border-radius:10px;padding:8px 10px;font-size:12px; }
+.tool-btn:hover { background:#30313a; }
+.tool-spacer { flex:1; }
+.send-btn { width:39px;height:39px;border:0;border-radius:12px;background:var(--blue2);color:white;font-size:19px; }
+.status { max-width:850px;margin:8px auto 0;color:var(--muted);font-size:11px;line-height:1.5;min-height:15px; }
+.status.error { color:var(--danger); }
+.hidden { display:none!important; }
+#imageModePanel { max-width:850px;margin:0 auto 12px; }
+#imagePrompt { width:100%;min-height:75px;resize:vertical;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:12px;outline:none; }
+.image-result { margin-top:12px; }
+.image-result img { width:100%;max-width:700px;border-radius:14px; }
+@media(max-width:700px) {
+  .sidebar { position:fixed;z-index:20;inset:0 auto 0 0;transform:translateX(-105%);transition:transform .2s;width:min(290px,85vw);box-shadow:15px 0 40px #0006; }
+  .sidebar.open { transform:translateX(0); }
+  .mobile-menu { display:inline-block; }
+  .topbar { padding:0 11px;height:57px; }
+  .content { padding:18px 14px; }
+  .composer-wrap { padding-left:10px;padding-right:10px; }
+  .top-title { font-size:14px; }
+  .mode-btn { padding:7px 9px; }
+  .welcome { min-height:40vh; }
+  .tool-btn { padding:8px; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">K</div>
+      <div>
+        <div class="brand-name">KodoAI</div>
+        <div class="brand-sub">Your personal AI workspace</div>
+      </div>
+    </div>
+    <button class="primary new-chat" id="newChatBtn">＋ &nbsp; New chat</button>
+    <div class="sidebar-label">Your conversations</div>
+    <div class="chat-list" id="chatList"></div>
+    <div class="sidebar-foot">KodoAI · Chat and image generation<br>Media memory is stored per conversation.</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="top-left">
+        <button class="icon-btn mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
+        <div class="top-title" id="headerTitle">New chat</div>
+      </div>
+      <div class="top-right">
+        <div class="mode-switch">
+          <button class="mode-btn active" id="chatModeBtn">Chat</button>
+          <button class="mode-btn" id="imagesModeBtn">Images</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="scroll-area" id="scrollArea">
+      <div class="content">
+        <div id="welcome" class="welcome">
+          <div class="welcome-logo">K</div>
+          <h1>What can I help with?</h1>
+          <p>Chat with KodoAI, save images and video frames to a conversation, and ask about them later.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-prompt="Explain this in simple words.">Explain something</button>
+            <button class="suggestion" data-prompt="Summarize all the images and videos saved in this chat.">Summarize saved media</button>
+            <button class="suggestion" data-prompt="Help me brainstorm some ideas.">Brainstorm ideas</button>
+          </div>
+        </div>
+        <div id="messages" class="messages"></div>
+        <div id="imageModePanel" class="hidden">
+          <textarea id="imagePrompt" placeholder="Describe the image you want KodoAI to generate..."></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+            <button class="primary" id="generateImageBtn">Generate image</button>
+          </div>
+          <div id="imageResult" class="image-result"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="composer-wrap" id="chatComposerWrap">
+      <div class="composer">
+        <div class="pending" id="pending"></div>
+        <div class="composer-box">
+          <textarea id="prompt" rows="1" placeholder="Message KodoAI..."></textarea>
+          <div class="composer-tools">
+            <button class="tool-btn" id="addImagesBtn">＋ Image</button>
+            <button class="tool-btn" id="addVideosBtn">＋ Video</button>
+            <span class="tool-spacer"></span>
+            <button class="send-btn" id="sendBtn" aria-label="Send message">↑</button>
+          </div>
+        </div>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <input class="hidden" id="imageInput" type="file" accept="image/*" multiple>
+    <input class="hidden" id="videoInput" type="file" accept="video/*" multiple>
+  </main>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const MAX_IMAGES = 40;
+  const MAX_VIDEOS = 15;
+  const STORE_KEY = "kodoai_history_v2";
+
+  const $ = id => document.getElementById(id);
+  const sidebar = $("sidebar");
+  const chatList = $("chatList");
+  const messagesEl = $("messages");
+  const welcome = $("welcome");
+  const promptEl = $("prompt");
+  const pendingEl = $("pending");
+  const statusEl = $("status");
+  const imageInput = $("imageInput");
+  const videoInput = $("videoInput");
+
+  let mode = "chat";
+  let pending = [];
+  let busy = false;
+  let chats = loadChats();
+  let currentId = chats[0]?.id || makeId();
+
+  if (!chats.length) {
+    chats = [newChatObject(currentId)];
+    saveChats();
+  }
+
+  function makeId() {
+    return "chat_" + Date.now().toString(36) + "_" +
+      Math.random().toString(36).slice(2, 10);
+  }
+
+  function newChatObject(id = makeId()) {
+    return { id, title:"New chat", messages:[], created:Date.now() };
+  }
+
+  function loadChats() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(c => ({
+        id: c.id || makeId(),
+        title: c.title || "New chat",
+        messages: Array.isArray(c.messages) ? c.messages : [],
+        created: c.created || Date.now()
+      }));
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveChats() {
+    try {
+      // Do not save base64 media in localStorage.
+      localStorage.setItem(STORE_KEY, JSON.stringify(chats));
+    } catch (e) {
+      setStatus("Could not save chat history in this browser.", true);
+    }
+  }
+
+  function currentChat() {
+    return chats.find(c => c.id === currentId);
+  }
+
+  function setStatus(text = "", error = false) {
+    statusEl.textContent = text;
+    statusEl.classList.toggle("error", error);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+    })[ch]);
+  }
+
+  function formatText(value) {
+    // Safe plain-text rendering; preserve line breaks.
+    return escapeHtml(value).replace(/\n/g, "<br>");
+  }
+
+  async function api(url, data) {
+    const response = await fetch(url, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(data)
+    });
+    const raw = await response.text();
+    let result;
+    try { result = JSON.parse(raw); }
+    catch (_) { throw new Error("Server returned an invalid response. Check main.py and the Replit logs."); }
+    if (!response.ok || result.success === false || result.error) {
+      throw new Error(result.error || result.message || `Request failed (${response.status})`);
+    }
+    return result;
+  }
+
+  function renderSidebar() {
+    chatList.innerHTML = "";
+    const ordered = [...chats].sort((a,b) => b.created - a.created);
+    ordered.forEach(chat => {
+      const row = document.createElement("div");
+      row.className = "chat-row";
+
+      const select = document.createElement("button");
+      select.className = "chat-select" + (chat.id === currentId ? " active" : "");
+      select.textContent = chat.title || "New chat";
+      select.title = chat.title || "New chat";
+      select.onclick = () => switchChat(chat.id);
+      row.appendChild(select);
+
+      const rename = document.createElement("button");
+      rename.className = "small-action";
+      rename.textContent = "✎";
+      rename.title = "Rename chat";
+      rename.onclick = () => renameChat(chat.id);
+      row.appendChild(rename);
+
+      const del = document.createElement("button");
+      del.className = "small-action";
+      del.textContent = "×";
+      del.title = "Delete chat";
+      del.onclick = () => deleteChat(chat.id);
+      row.appendChild(del);
+
+      chatList.appendChild(row);
+    });
+    const chat = currentChat();
+    $("headerTitle").textContent = chat?.title || "New chat";
+  }
+
+  function addMessageDOM(role, text, files = []) {
+    welcome.classList.add("hidden");
+    const wrapper = document.createElement("div");
+    wrapper.className = "message " + (role === "user" ? "user" : "assistant");
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = role === "user" ? "You" : "K";
+    wrapper.appendChild(avatar);
+
+    const body = document.createElement("div");
+    body.className = "message-body";
+
+    if (files.length) {
+      const chips = document.createElement("div");
+      chips.className = "message-files";
+      files.forEach(f => {
+        const chip = document.createElement("span");
+        chip.className = "file-chip";
+        chip.textContent = (f.type === "video" ? "▶ " : "▧ ") + f.name;
+        chips.appendChild(chip);
+      });
+      body.appendChild(chips);
+    }
+
+    if (text) {
+      const textNode = document.createElement("div");
+      textNode.innerHTML = formatText(text);
+      body.appendChild(textNode);
+    }
+    wrapper.appendChild(body);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+    return wrapper;
+  }
+
+  function scrollToBottom() {
+    requestAnimationFrame(() => {
+      $("scrollArea").scrollTop = $("scrollArea").scrollHeight;
+    });
+  }
+
+  function renderMessages() {
+    messagesEl.innerHTML = "";
+    const chat = currentChat();
+    const list = chat?.messages || [];
+    welcome.classList.toggle("hidden", list.length > 0);
+    list.forEach(m => addMessageDOM(m.role, m.content, m.files || []));
+    renderSidebar();
+    scrollToBottom();
+  }
+
+  function addStoredMessage(role, content, files = []) {
+    const chat = currentChat();
+    if (!chat) return;
+    chat.messages.push({
+      role, content:content || "",
+      files:files.map(f => ({name:f.name, type:f.type}))
+    });
+    if (role === "user" && chat.title === "New chat") {
+      const title = (content || files[0]?.name || "New chat").trim();
+      chat.title = title.slice(0, 34) || "New chat";
+    }
+    saveChats();
+    renderSidebar();
+  }
+
+  function switchChat(id) {
+    if (!chats.some(c => c.id === id)) return;
+    currentId = id;
+    pending = [];
+    renderPending();
+    renderMessages();
+    setStatus("");
+    sidebar.classList.remove("open");
+  }
+
+  function createNewChat() {
+    const chat = newChatObject();
+    chats.unshift(chat);
+    currentId = chat.id;
+    pending = [];
+    saveChats();
+    renderPending();
+    renderMessages();
+    setStatus("");
+    promptEl.value = "";
+    autoResize();
+    sidebar.classList.remove("open");
+  }
+
+  async function renameChat(id) {
+    const chat = chats.find(c => c.id === id);
+    if (!chat) return;
+    const name = window.prompt("Enter a name for this chat:", chat.title);
+    if (name === null) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    chat.title = trimmed.slice(0, 80);
+    saveChats();
+    renderSidebar();
+  }
+
+  async function deleteChat(id) {
+    const chat = chats.find(c => c.id === id);
+    if (!chat) return;
+    if (!window.confirm(`Delete "${chat.title}" and its saved media memory?`)) return;
+
+    try {
+      await api("/api/media/clear", {chat_id:id});
+    } catch (e) {
+      // Local deletion still proceeds if the server is temporarily unavailable.
+      console.warn("Media clear request failed:", e.message);
+    }
+
+    chats = chats.filter(c => c.id !== id);
+    if (!chats.length) chats.push(newChatObject());
+    if (currentId === id) currentId = chats[0].id;
+    pending = [];
+    saveChats();
+    renderPending();
+    renderMessages();
+    setStatus("");
+  }
+
+  function switchMode(nextMode) {
+    mode = nextMode;
+    const images = mode === "images";
+    $("chatModeBtn").classList.toggle("active", !images);
+    $("imagesModeBtn").classList.toggle("active", images);
+    $("chatComposerWrap").classList.toggle("hidden", images);
+    $("imageModePanel").classList.toggle("hidden", !images);
+    $("welcome").classList.toggle("hidden", images || (currentChat()?.messages.length > 0));
+    if (images) $("imagePrompt").focus();
+  }
+
+  function renderPending() {
+    pendingEl.innerHTML = "";
+    pending.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "pending-item";
+      if (item.type === "image") {
+        const img = document.createElement("img");
+        img.src = item.data;
+        img.alt = item.name;
+        card.appendChild(img);
+      } else {
+        const icon = document.createElement("div");
+        icon.style.cssText = "height:100%;display:grid;place-items:center;font-size:24px";
+        icon.textContent = "▶";
+        card.appendChild(icon);
+      }
+      const label = document.createElement("div");
+      label.className = "file-name";
+      label.textContent = item.name;
+      card.appendChild(label);
+      const remove = document.createElement("button");
+      remove.textContent = "×";
+      remove.title = "Remove attachment";
+      remove.onclick = () => {
+        pending = pending.filter(p => p.id !== item.id);
+        renderPending();
+      };
+      card.appendChild(remove);
+      pendingEl.appendChild(card);
+    });
+  }
+
+  function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Could not read " + file.name));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function compressImage(file, maxSide = 1600, quality = 0.82) {
+    const data = await fileToDataURL(file);
+    const img = new Image();
+    img.src = data;
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error("Could not open image: " + file.name));
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", quality);
+  }
+
+  async function videoFrames(file) {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    video.src = url;
+
+    try {
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = resolve;
+        video.onerror = () => reject(new Error("Could not open video: " + file.name));
+      });
+
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+      const times = duration > 0.2
+        ? [...new Set([Math.min(0.1, duration / 4), duration / 2, Math.max(0, duration - 0.15)])]
+        : [0];
+
+      const frames = [];
+      for (const time of times) {
+        await new Promise((resolve, reject) => {
+          video.onseeked = resolve;
+          video.onerror = () => reject(new Error("Could not read a video frame."));
+          video.currentTime = time;
+          if (Math.abs(video.currentTime - time) < 0.01 && video.readyState >= 2) resolve();
+        });
+
+        const scale = Math.min(1, 768 / Math.max(video.videoWidth, video.videoHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+        canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        frames.push(canvas.toDataURL("image/jpeg", 0.75));
+      }
+      return frames;
+    } finally {
+      URL.revokeObjectURL(url);
+      video.removeAttribute("src");
+      video.load();
+    }
+  }
+
+  async function addImageFiles(fileList) {
+    const files = Array.from(fileList || []);
+    const existing = pending.filter(p => p.type === "image").length;
+    const allowed = Math.max(0, MAX_IMAGES - existing);
+    if (files.length > allowed) {
+      setStatus(`You can attach up to ${MAX_IMAGES} images to one message.`, true);
+    }
+
+    for (const file of files.slice(0, allowed)) {
+      if (!file.type.startsWith("image/")) continue;
+      try {
+        setStatus("Preparing image: " + file.name);
+        const data = await compressImage(file);
+        pending.push({id:makeId(), type:"image", name:file.name, data});
+        renderPending();
+      } catch (e) {
+        setStatus(e.message, true);
+      }
+    }
+    setStatus(pending.length ? `${pending.length} attachment(s) ready.` : "");
+    imageInput.value = "";
+  }
+
+  async function addVideoFiles(fileList) {
+    const files = Array.from(fileList || []);
+    const existing = pending.filter(p => p.type === "video").length;
+    const allowed = Math.max(0, MAX_VIDEOS - existing);
+    if (files.length > allowed) {
+      setStatus(`You can attach up to ${MAX_VIDEOS} videos to one message.`, true);
+    }
+
+    for (const file of files.slice(0, allowed)) {
+      if (!file.type.startsWith("video/")) continue;
+      try {
+        setStatus("Extracting frames from: " + file.name);
+        const frames = await videoFrames(file);
+        pending.push({id:makeId(), type:"video", name:file.name, frames});
+        renderPending();
+      } catch (e) {
+        setStatus(e.message, true);
+      }
+    }
+    setStatus(pending.length ? `${pending.length} attachment(s) ready.` : "");
+    videoInput.value = "";
+  }
+
+  function isJustSavingRequest(text) {
+    const s = (text || "").toLowerCase();
+    return !s.trim() ||
+      /\b(remember|save|store|keep|memorize|only say|just say|reply only|only reply)\b/.test(s) &&
+      /\b(ok|okay|remember|save|store|this|these|image|images|video|videos|media)\b/.test(s);
+  }
+
+  async function sendMessage() {
+    if (busy || mode !== "chat") return;
+
+    const text = promptEl.value.trim();
+    const files = [...pending];
+    if (!text && !files.length) return;
+
+    busy = true;
+    $("sendBtn").disabled = true;
+    $("addImagesBtn").disabled = true;
+    $("addVideosBtn").disabled = true;
+    promptEl.value = "";
+    autoResize();
+    pending = [];
+    renderPending();
+
+    addStoredMessage("user", text, files);
+    addMessageDOM("user", text, files);
+
+    try {
+      if (files.length) {
+        const chatId = currentId;
+        let done = 0;
+
+        for (const file of files) {
+          setStatus(`Saving media ${done + 1}/${files.length}: ${file.name}`);
+
+          const attachment = {
+            id:file.id,
+            type:file.type,
+            name:file.name
+          };
+          if (file.type === "image") attachment.data = file.data;
+          if (file.type === "video") attachment.frames = file.frames;
+
+          await api("/api/media/ingest", {
+            chat_id:chatId,
+            attachment
+          });
+          done++;
+        }
+
+        if (isJustSavingRequest(text)) {
+          addStoredMessage("assistant", "OK");
+          addMessageDOM("assistant", "OK");
+        } else {
+          setStatus("Media saved. Asking KodoAI...");
+          const chat = currentChat();
+          const history = (chat?.messages || [])
+            .filter(m => m.role === "user" || m.role === "assistant")
+            .slice(-14, -1)
+            .map(m => ({role:m.role, content:m.content || ""}));
+
+          const result = await api("/api/chat", {
+            chat_id:chatId,
+            prompt:text,
+            history
+          });
+          const answer = result.response || "I couldn't generate a response.";
+          addStoredMessage("assistant", answer);
+          addMessageDOM("assistant", answer);
+        }
+
+        setStatus(`Saved ${done} media item(s) to this chat's memory.`);
+      } else {
+        setStatus("KodoAI is thinking...");
+        const chat = currentChat();
+        const history = (chat?.messages || [])
+          .slice(0, -1)
+          .filter(m => m.role === "user" || m.role === "assistant")
+          .slice(-14)
+          .map(m => ({role:m.role, content:m.content || ""}));
+
+        const result = await api("/api/chat", {
+          chat_id:currentId,
+          prompt:text,
+          history
+        });
+        const answer = result.response || "I couldn't generate a response.";
+        addStoredMessage("assistant", answer);
+        addMessageDOM("assistant", answer);
+        setStatus("");
+      }
+    } catch (e) {
+      const message = "Error: " + (e.message || "Something went wrong.");
+      addStoredMessage("assistant", message);
+      addMessageDOM("assistant", message);
+      setStatus(message, true);
+    } finally {
+      busy = false;
+      $("sendBtn").disabled = false;
+      $("addImagesBtn").disabled = false;
+      $("addVideosBtn").disabled = false;
+      promptEl.focus();
+    }
+  }
+
+  async function generateImage() {
+    if (busy) return;
+    const text = $("imagePrompt").value.trim();
+    if (!text) {
+      setStatus("Describe the image first.", true);
+      return;
+    }
+
+    busy = true;
+    $("generateImageBtn").disabled = true;
+    $("imageResult").innerHTML = "";
+    setStatus("Generating image...");
+
+    try {
+      const result = await api("/api/image", {prompt:text, image:text});
+      const imageUrl = result.image_url || result.image || result.result;
+      if (!imageUrl) throw new Error("No image was returned by the server.");
+
+      const img = document.createElement("img");
+      img.alt = "Generated by KodoAI";
+      if (typeof imageUrl === "string") {
+        img.src = imageUrl.startsWith("data:") || imageUrl.startsWith("http")
+          ? imageUrl : "data:image/png;base64," + imageUrl;
+      } else {
+        throw new Error("The server returned an unsupported image format.");
+      }
+      $("imageResult").appendChild(img);
+
+      const download = document.createElement("a");
+      download.textContent = "Open / save image";
+      download.href = img.src;
+      download.target = "_blank";
+      download.rel = "noopener";
+      download.style.cssText = "display:block;margin-top:10px;color:#9db0ff;font-size:13px";
+      $("imageResult").appendChild(download);
+      setStatus("Image generated.");
+    } catch (e) {
+      setStatus("Image error: " + e.message, true);
+    } finally {
+      busy = false;
+      $("generateImageBtn").disabled = false;
+    }
+  }
+
+  function autoResize() {
+    promptEl.style.height = "auto";
+    promptEl.style.height = Math.min(promptEl.scrollHeight, 160) + "px";
+  }
+
+  $("newChatBtn").addEventListener("click", createNewChat);
+  $("menuBtn").addEventListener("click", () => sidebar.classList.toggle("open"));
+  $("chatModeBtn").addEventListener("click", () => switchMode("chat"));
+  $("imagesModeBtn").addEventListener("click", () => switchMode("images"));
+  $("addImagesBtn").addEventListener("click", () => imageInput.click());
+  $("addVideosBtn").addEventListener("click", () => videoInput.click());
+  imageInput.addEventListener("change", e => addImageFiles(e.target.files));
+  videoInput.addEventListener("change", e => addVideoFiles(e.target.files));
+  $("sendBtn").addEventListener("click", sendMessage);
+  $("generateImageBtn").addEventListener("click", generateImage);
+  promptEl.addEventListener("input", autoResize);
+  promptEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  document.querySelectorAll(".suggestion").forEach(btn => {
+    btn.addEventListener("click", () => {
+      promptEl.value = btn.dataset.prompt || "";
+      autoResize();
+      promptEl.focus();
+    });
+  });
+
+  renderSidebar();
+  renderMessages();
+  renderPending();
+})();
+</script>
+</body>
+</html>
